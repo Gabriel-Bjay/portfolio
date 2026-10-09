@@ -1,0 +1,21 @@
+Date,Order ID,Product,Category,Region,Channel,Quantity,Unit Price,Amount
+03/03/2025,S-1001,Phone case,Accessories,Westlands,In-store,2,600,"KES 1,200"
+04/03/2025,S-1002,Screen guard,Accessories,CBD,M-Pesa till,3,300,KES 900
+05/03/2025,S-1003,Infinix Hot 40i,Phones,Westlands,In-store,1,14500,"KES 14,500"
+06/03/2025,S-1004,20W charger,Accessories,Kilimani,Website,1,1200,"KES 1,200"
+08/03/2025,S-1005,Itel A70,Phones,CBD,In-store,1,9500,"KES 9,500"
+10/03/2025,S-1006,Phone case,Accessories,CBD,WhatsApp,1,600,KES 600
+13/03/2025,S-1007,Tecno Spark 20,Phones,Kilimani,Website,1,16500,"KES 16,500"
+14/03/2025,S-1008,Screen guard,Accessories,Westlands,In-store,2,300,KES 600
+15/03/2025,S-1009,USB-C cable,Accessories,CBD,M-Pesa till,4,350,"KES 1,400"
+17/03/2025,S-1010,20W charger,Accessories,Westlands,In-store,2,1200,"KES 2,400"
+18/03/2025,S-1011,Infinix Hot 40i,Phones,CBD,M-Pesa till,1,14500,"KES 14,500"
+20/03/2025,S-1012,Phone case,Accessories,Kilimani,WhatsApp,3,600,"KES 1,800"
+21/03/2025,S-1013,Itel A70,Phones,Westlands,In-store,1,9500,"KES 9,500"
+22/03/2025,S-1014,Screen guard,Accessories,CBD,In-store,5,300,"KES 1,500"
+24/03/2025,S-1015,USB-C cable,Accessories,Westlands,M-Pesa till,2,350,KES 700
+25/03/2025,S-1016,Tecno Spark 20,Phones,CBD,In-store,1,16500,"KES 16,500"
+27/03/2025,S-1017,20W charger,Accessories,Kilimani,Website,1,1200,"KES 1,200"
+28/03/2025,S-1018,Phone case,Accessories,Westlands,In-store,1,600,KES 600
+29/03/2025,S-1019,Infinix Hot 40i,Phones,Kilimani,Website,1,14500,"KES 14,500"
+31/03/2025,S-1020,Screen guard,Accessories,CBD,WhatsApp,2,300,not paid yet

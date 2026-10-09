@@ -85,4 +85,20 @@ Sells the Fiverr gig: *"I will build an interactive dashboard from your Excel or
 8. Unit tests cover parse, detect, metrics, forecast, insights, sample generator.
 
 ## Implementation notes
-*(builder: fill in key files, data flow and gotchas when done)*
+**Key files** (`src/features/dashboard/`, pure logic has a `*.test.ts` beside it)
+- `parse.ts` file → `RawTable` (papaparse CSV, `read-excel-file` for .xlsx, BOM and `;`/`,` handling, 10 MB / 200k-row limits, `FriendlyError`).
+- `values.ts` cell parsing (money, currency symbol, dates incl. day-first disambiguation and Excel serials); `detect.ts` column roles from header hints plus value checks.
+- `normalize.ts` applies a `Mapping` to build typed `Order`s and counts every skipped row by reason (`describeSkipped`); `normalizeOrdersAsync` works in chunks so the UI stays responsive.
+- `metrics.ts` (series, granularity, top-N, weekday, Pareto, anomalies), `forecast.ts` (Holt, grid-searched α/β), `insights.ts` (sentence templates), `model.ts` (`buildModel` ties filters + metrics + forecast + insights into one `DashboardModel`).
+- `sample.ts` seeded generator for the fictional "Duka Digital" shop; the same generator backs `app/dashboard/sample.csv/route.ts`.
+- `exportSummary.ts` / `download.ts` summary CSV; print uses `print:` utilities plus the `@media print` block in `globals.css`.
+- UI: `DashboardApp` (stage machine: landing, loading, ready; owns file, mapping, filters), `Landing`, `MappingBar`, `DashboardView` (KPIs, filters, insights, charts), `ChartCard` (title, one-line summary, "Show table"), `charts.tsx` (Recharts, `var(--chart-N)` only), `ui.tsx` (skeleton, icons, button styles).
+
+**Data flow**: file/sample → `RawTable` → `detectColumns` → `Mapping` (user can override) → `normalizeOrdersAsync` → `Order[]` + skip report → `buildModel(orders, filters)` → `DashboardView`. Changing a mapping re-normalises; changing a filter only rebuilds the model.
+
+**Gotchas**
+- `DashboardView` is loaded with `next/dynamic` (`ssr: false`) so Recharts only ships once there is data. `data-hydrated` on the root lets e2e wait for React before clicking.
+- Dates are UTC calendar days (integers), never local `Date`s, so results do not shift with the viewer's timezone.
+- "Last 30/90 days" and "Year to date" are relative to the latest date in the data, not today.
+- `next dev` rewrites `tsconfig.json` (adds `NEXT_DIST_DIR` types globs and reflows arrays). Revert with `git checkout tsconfig.json` after an isolated dev-server run.
+- e2e: `sales-small.csv` totals KES 109,600 over 19 orders with 1 skipped row ("not paid yet"); `sales-small.xlsx` totals 45,000 over 8 orders. Run with `E2E_BASE_URL` against a dev server, or `scripts/check.sh full`.
