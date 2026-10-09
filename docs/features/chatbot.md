@@ -80,4 +80,57 @@ user text can't close the delimiter tag).
 7. 390px without horizontal scroll; light/dark legible; no console errors; axe clean.
 
 ## Implementation notes
-*(builder: fill in key files, data flow and gotchas when done)*
+
+**Key files** (`src/features/chatbot/` unless noted)
+- Pure logic, each with a `*.test.ts`: `tokenize.ts`, `chunk.ts`, `bm25.ts`, `retrieve.ts`, `citations.ts`, `schema.ts`
+  (zod), `rate-limit.ts`, `prompt.ts`, `fallback.ts`, `format.ts` (safe formatter), `chat-client.ts`, `embed-params.ts`.
+- Request pipeline: `handler.ts` (`handleChat`, plain `Request` in, `Response` out, so it is unit-tested without Next),
+  `gemini.ts` (SDK wrapper, takes an injectable client for the mocked-stream test), `server.ts` (reads env, builds the
+  limiter and streamer), `default-knowledge.ts` (reads `knowledge/twiga-brew.md`). `src/app/api/chat/route.ts` is a thin wrapper.
+- UI (client): `useChat.ts` (state, streaming, stop, retry), `ChatPanel.tsx`, `FormattedText.tsx`, `ModeBadge.tsx`,
+  `ChatbotDemo.tsx` (owns which knowledge base is active), `KnowledgeViewer.tsx`, `CustomFaq.tsx`, `WidgetSnippet.tsx`,
+  `WidgetLoader.tsx`, `EmbedBridge.tsx`. Routes: `src/app/chatbot/page.tsx`, `src/app/chatbot/embed/{layout,page}.tsx`.
+- Widget: `public/chat-widget.js` (about 3.9 KB, shadow DOM, no globals). E2E: `e2e/chatbot.spec.ts`.
+
+**Data flow.** `POST /api/chat`: rate limit (counts every request, valid or not) -> read and size-check the body -> zod
+-> chunk the knowledge (custom text from the request, else the café file) -> if there is a key, send the model all sections
+(<= 12,000 chars and <= 40 sections) or the top 6 by BM25, numbered `S1..` inside `<knowledge>`; the question sits in
+`<user_question>` -> wait for the first text chunk (15 s) -> stream plain text. Any failure before the first chunk, no key,
+or an empty answer returns the offline fallback (best BM25 section) with `X-Jibu-Mode: fallback`.
+- `X-Jibu-Sources` lists the sections *sent to the model* (`[{id:"S1",title}]`), because headers go out before the answer
+  exists. The client resolves `[S2]` in the streamed text against that list and shows chips only for sections that were
+  cited. Offline answers show their one section. Out-of-range citations are dropped everywhere.
+- `GET /api/chat` returns `{mode}` so the badge is right before the first question (reveals only whether a key exists).
+- A failure *after* the first chunk cannot switch to the fallback (headers are sent): the stream errors, the client keeps
+  the partial text, shows an error and offers Retry.
+
+**Gotchas**
+- Knowledge keyword hints: `<!-- keywords: ... -->` comments inside a section are indexed by BM25 but stripped from what
+  people and the model see. They carry the Swahili (and a few English) synonyms that make offline mode work for
+  "Mnafunga saa ngapi?" and "price of the burger". Custom FAQs can use them too.
+- Retrieval ranks on the latest question alone; the previous question is mixed in only when the latest matches nothing
+  ("and on weekends?"). Mixing it in for short questions made "where is parking" return the delivery section.
+- Rate limiter is in-memory per server instance (serverless instances do not share it) and trusts the first
+  `X-Forwarded-For` entry, so it is spoofable without a trusted proxy. The e2e tests rely on that: each test sends its own
+  `x-forwarded-for` so the 10/minute budget is not shared between parallel tests and projects.
+- The embed route must not show the site header, but the root layout is shared and untouched. `embed/layout.tsx` hides it
+  with `body:has([data-jibu-embed]) > header`. A route group with its own root layout would be cleaner if the shared
+  layout is ever restructured.
+- The embed page reads `searchParams` (`title`, `color` without `#`) inside a Suspense boundary so the rest stays in the
+  static shell. The colour is validated as hex and the title is rendered as text.
+- Widget: Escape inside the iframe never reaches the host page, so the embed posts `{type:"jibu:close"}` to its parent
+  and the widget checks `event.source` and origin. Opening focuses the iframe, whose question box takes focus.
+  Closing returns focus to the launcher. The iframe is created on first open and kept, so the conversation survives.
+- Auto-scroll uses a layout effect; with a passive effect the scroll event of the previous adjustment could see the new,
+  taller content and wrongly mark the reader as having scrolled up. A reply that arrives whole and is taller than the
+  view is shown from its first line.
+- Model output goes through `format.ts` into React text nodes. There is no `dangerouslySetInnerHTML` anywhere.
+- `thinkingBudget: 0` and one retry attempt are set in `gemini.ts`. Thinking tokens would eat the 400-token output
+  budget. These were checked against a local fake of the Gemini streaming endpoint (via `GOOGLE_GEMINI_BASE_URL`), not
+  against the live API, because no key was available.
+- The knowledge file is read with `fs.readFileSync(path.join(process.cwd(), "src/features/chatbot/knowledge/..."))`
+  so file tracing can include it in serverless builds. If a host does not trace it, add it to
+  `outputFileTracingIncludes`.
+- E2E: tests that need offline mode skip themselves when `GEMINI_API_KEY` is set in the test environment. Message limits
+  (1,000 per message, history cut to the last 20) are enforced client-side too; long answers are truncated when they are
+  sent back as history.
