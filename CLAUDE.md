@@ -3,16 +3,17 @@
 # Portfolio: project rules (hub)
 
 Next.js 16 (App Router, `cacheComponents` on) · React 19 · TypeScript strict · Tailwind 4 · Vitest · Playwright.
-Two demo projects, each in its own folders. Feature specs and notes live in spokes:
+Three demo projects, each in its own folders. Feature specs and notes live in spokes:
 
 - [docs/features/dashboard.md](docs/features/dashboard.md): Mauzo Insights (CSV/Excel → dashboard)
 - [docs/features/chatbot.md](docs/features/chatbot.md): Jibu (AI support chatbot)
+- [docs/features/mtaa.md](docs/features/mtaa.md): Mtaa (live 3D neighbourhood of your AI agents)
 
 Read the hub every time; open a spoke only when working on that feature.
 
 ## Commands
 - `scripts/check.sh`: typecheck + lint + unit tests. Prints only failures.
-- `scripts/check.sh --scope <word>`: same, limited to paths containing `<word>` (`dashboard`, `chat`).
+- `scripts/check.sh --scope <word>`: same, limited to paths containing `<word>` (`dashboard`, `chat`, `mtaa`).
 - `scripts/check.sh full`: adds `next build` and Playwright e2e + axe accessibility tests.
   In the cloud sandbox, prefix with `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium`.
 - `node scripts/screenshot.mjs <baseUrl> <outDir> /route ...`: desktop/mobile × light/dark screenshots,
